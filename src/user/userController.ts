@@ -40,7 +40,7 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
 
     res.json({ accessToken: token });
   } catch (error) {
-    console.log(error);
+    return next(createHttpError(500, "Error while signing the jwt token"));
   }
 };
 
