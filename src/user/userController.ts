@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import { sign } from "jsonwebtoken";
 import { config } from "../config/config";
 
+// this is the function that helps in registering the user
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // validation
@@ -38,10 +39,39 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
       expiresIn: "7d",
     });
 
-    res.json({ accessToken: token });
+    res.status(201).json({ accessToken: token });
   } catch (error) {
     return next(createHttpError(500, "Error while signing the jwt token"));
   }
 };
 
-export { createUser };
+// this is the function that helps login in the user
+const loginUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return next(createHttpError(400, "All fileds are required"));
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(createHttpError(404, "User not found"));
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return next(
+        createHttpError("404", "Username or Password is not correct")
+      );
+    }
+
+    // create accesstoken
+    const token = sign({ sub: user._id }, config.jwtSecret as string);
+
+    res.status(200).json({ accessToken: token });
+  } catch (error) {
+    console.log("Something went wrong", error);
+  }
+};
+
+export { createUser, loginUser };
